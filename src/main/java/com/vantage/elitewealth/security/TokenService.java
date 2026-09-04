@@ -6,14 +6,21 @@ import com.vantage.elitewealth.model.request.AuthRequest;
 import com.vantage.elitewealth.model.response.AuthResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import jakarta.annotation.PostConstruct;
+
 /**
  * Fetches, caches, and auto-refreshes the EliteWealth Bearer token.
- * All client classes call {@link #getBearerToken()} before making upstream requests.
+ * Bootstraps on startup using the service-account credentials so the token
+ * is available before any UI login occurs.
  */
 @Service
 public class TokenService {
@@ -24,7 +31,15 @@ public class TokenService {
     private final TokenStore tokenStore;
     private final AppConfig appConfig;
 
-    // Credentials stored after first programmatic login call
+    @Value("${elitewealth.api-key}")
+    private String apiKey;
+
+    @Value("${elitewealth.service.username}")
+    private String serviceUsername;
+
+    @Value("${elitewealth.service.password}")
+    private String servicePassword;
+
     private volatile String cachedUsername;
     private volatile String cachedPassword;
 
@@ -35,26 +50,33 @@ public class TokenService {
     }
 
     /**
+     * Bootstrap the token at startup so all API calls work immediately.
+     */
+    @PostConstruct
+    public void bootstrap() {
+        try {
+            log.info("Bootstrapping EliteWealth service-account token on startup");
+            authenticate(serviceUsername, servicePassword);
+        } catch (Exception ex) {
+            log.warn("Could not bootstrap EliteWealth token on startup: {}. Token will be fetched on first login.", ex.getMessage());
+        }
+    }
+
+    /**
      * Returns a valid Bearer token string, refreshing if near expiry.
-     * Throws {@link EliteWealthException} if no credentials have been authenticated yet.
      */
     public synchronized String getBearerToken() {
         if (tokenStore.isExpiredOrAboutToExpire(appConfig.getTokenRefreshBufferSeconds())) {
-            if (cachedUsername == null) {
-                throw new EliteWealthException(
-                        "No active session. Please authenticate first via POST /auth/token",
-                        HttpStatus.UNAUTHORIZED);
-            }
+            String user = cachedUsername != null ? cachedUsername : serviceUsername;
+            String pass = cachedPassword != null ? cachedPassword : servicePassword;
             log.info("Token expired or near expiry — refreshing");
-            authenticate(cachedUsername, cachedPassword);
+            authenticate(user, pass);
         }
         return tokenStore.getAccessToken();
     }
 
     /**
      * Performs the upstream authentication call and stores the resulting token.
-     *
-     * @return the full AuthResponse from EliteWealth
      */
     public AuthResponse authenticate(String username, String password) {
         log.info("Authenticating with EliteWealth as user '{}'", username);
@@ -63,9 +85,20 @@ public class TokenService {
         request.setUsername(username);
         request.setPassword(password);
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+        headers.set("Accept", "*/*");
+        headers.set("api-key", apiKey);
+
+        HttpEntity<AuthRequest> entity = new HttpEntity<>(request, headers);
+
         ResponseEntity<AuthResponse> response;
         try {
-            response = restTemplate.postForEntity(appConfig.getAuthUrl(), request, AuthResponse.class);
+            response = restTemplate.exchange(
+                    appConfig.getAuthUrl(),
+                    HttpMethod.POST,
+                    entity,
+                    AuthResponse.class);
         } catch (Exception ex) {
             throw new EliteWealthException("Authentication request to EliteWealth failed: " + ex.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR, ex);
@@ -81,8 +114,6 @@ public class TokenService {
                 : 3600L;
 
         tokenStore.store(body.getAccessToken(), body.getRefreshToken(), validity);
-
-        // Cache credentials for auto-refresh
         this.cachedUsername = username;
         this.cachedPassword = password;
 
@@ -90,9 +121,6 @@ public class TokenService {
         return body;
     }
 
-    /**
-     * Clears the stored token (logout).
-     */
     public void clearToken() {
         tokenStore.clear();
         cachedUsername = null;

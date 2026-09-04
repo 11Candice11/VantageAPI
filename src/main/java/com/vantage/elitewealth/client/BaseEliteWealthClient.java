@@ -18,7 +18,7 @@ public abstract class BaseEliteWealthClient {
     }
 
     /**
-     * Returns an HttpEntity with Authorization: Bearer and Content-Type: application/json headers,
+     * Returns an HttpEntity with Authorization: Bearer, api-key, and Content-Type: application/json headers,
      * plus the supplied request body.
      */
     protected <T> HttpEntity<T> authorizedEntity(T body) {

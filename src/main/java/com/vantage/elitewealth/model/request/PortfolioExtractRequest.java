@@ -4,10 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+/**
+ * Request body for POST /restApiData/Portfolio/Extract
+ * Field names must match the EliteWealth API exactly.
+ */
 public class PortfolioExtractRequest {
 
     @JsonProperty("EntityIds")
-    private List<Long> entityIds;
+    private List<String> entityIds;
 
     @JsonProperty("ValueInputModels")
     private List<ValueInputModel> valueInputModels;
@@ -20,77 +24,95 @@ public class PortfolioExtractRequest {
 
     public PortfolioExtractRequest() {}
 
-    public List<Long> getEntityIds() { return entityIds; }
-    public void setEntityIds(List<Long> entityIds) { this.entityIds = entityIds; }
+    public List<String> getEntityIds() { return entityIds; }
+    public void setEntityIds(List<String> entityIds) { this.entityIds = entityIds; }
 
     public List<ValueInputModel> getValueInputModels() { return valueInputModels; }
-    public void setValueInputModels(List<ValueInputModel> valueInputModels) {
-        this.valueInputModels = valueInputModels;
-    }
+    public void setValueInputModels(List<ValueInputModel> v) { this.valueInputModels = v; }
 
     public List<TransactionInputModel> getTransactionInputModels() { return transactionInputModels; }
-    public void setTransactionInputModels(List<TransactionInputModel> transactionInputModels) {
-        this.transactionInputModels = transactionInputModels;
-    }
+    public void setTransactionInputModels(List<TransactionInputModel> t) { this.transactionInputModels = t; }
 
     public List<AssetExposureInputModel> getAssetExposureInputModels() { return assetExposureInputModels; }
-    public void setAssetExposureInputModels(List<AssetExposureInputModel> assetExposureInputModels) {
-        this.assetExposureInputModels = assetExposureInputModels;
-    }
+    public void setAssetExposureInputModels(List<AssetExposureInputModel> a) { this.assetExposureInputModels = a; }
 
-    // ── Nested input models ──────────────────────────────────────────────────
+    // ── Nested models (matching real API field names) ─────────────────────
 
     public static class ValueInputModel {
-        @JsonProperty("PortfolioId")
-        private Long portfolioId;
+        @JsonProperty("DateApplicable")
+        private String dateApplicable;
 
-        @JsonProperty("Date")
-        private String date;
+        @JsonProperty("ValueTypeL")
+        private Integer valueTypeL;
 
-        @JsonProperty("CurrencyCode")
-        private String currencyCode;
+        @JsonProperty("TargetCurrencyL")
+        private Integer targetCurrencyL;
 
-        public Long getPortfolioId() { return portfolioId; }
-        public void setPortfolioId(Long portfolioId) { this.portfolioId = portfolioId; }
+        public ValueInputModel() {}
 
-        public String getDate() { return date; }
-        public void setDate(String date) { this.date = date; }
+        public ValueInputModel(String dateApplicable, int valueTypeL, int targetCurrencyL) {
+            this.dateApplicable = dateApplicable;
+            this.valueTypeL     = valueTypeL;
+            this.targetCurrencyL = targetCurrencyL;
+        }
 
-        public String getCurrencyCode() { return currencyCode; }
-        public void setCurrencyCode(String currencyCode) { this.currencyCode = currencyCode; }
+        public String getDateApplicable()   { return dateApplicable; }
+        public Integer getValueTypeL()      { return valueTypeL; }
+        public Integer getTargetCurrencyL() { return targetCurrencyL; }
+        public void setDateApplicable(String d)  { this.dateApplicable = d; }
+        public void setValueTypeL(Integer v)     { this.valueTypeL = v; }
+        public void setTargetCurrencyL(Integer c){ this.targetCurrencyL = c; }
     }
 
     public static class TransactionInputModel {
-        @JsonProperty("PortfolioId")
-        private Long portfolioId;
+        @JsonProperty("DateFrom")
+        private String dateFrom;
 
-        @JsonProperty("FromDate")
-        private String fromDate;
+        @JsonProperty("DateTo")
+        private String dateTo;
 
-        @JsonProperty("ToDate")
-        private String toDate;
+        @JsonProperty("TargetCurrencyL")
+        private Integer targetCurrencyL;
 
-        public Long getPortfolioId() { return portfolioId; }
-        public void setPortfolioId(Long portfolioId) { this.portfolioId = portfolioId; }
+        public TransactionInputModel() {}
 
-        public String getFromDate() { return fromDate; }
-        public void setFromDate(String fromDate) { this.fromDate = fromDate; }
+        public TransactionInputModel(String dateFrom, String dateTo, int targetCurrencyL) {
+            this.dateFrom        = dateFrom;
+            this.dateTo          = dateTo;
+            this.targetCurrencyL = targetCurrencyL;
+        }
 
-        public String getToDate() { return toDate; }
-        public void setToDate(String toDate) { this.toDate = toDate; }
+        public String getDateFrom()         { return dateFrom; }
+        public String getDateTo()           { return dateTo; }
+        public Integer getTargetCurrencyL() { return targetCurrencyL; }
+        public void setDateFrom(String d)        { this.dateFrom = d; }
+        public void setDateTo(String d)          { this.dateTo = d; }
+        public void setTargetCurrencyL(Integer c){ this.targetCurrencyL = c; }
     }
 
     public static class AssetExposureInputModel {
-        @JsonProperty("PortfolioId")
-        private Long portfolioId;
+        @JsonProperty("DateApplicable")
+        private String dateApplicable;
 
-        @JsonProperty("Date")
-        private String date;
+        @JsonProperty("CountryL")
+        private Integer countryL;
 
-        public Long getPortfolioId() { return portfolioId; }
-        public void setPortfolioId(Long portfolioId) { this.portfolioId = portfolioId; }
+        @JsonProperty("TargetCurrencyL")
+        private Integer targetCurrencyL;
 
-        public String getDate() { return date; }
-        public void setDate(String date) { this.date = date; }
+        public AssetExposureInputModel() {}
+
+        public AssetExposureInputModel(String dateApplicable, int countryL, int targetCurrencyL) {
+            this.dateApplicable  = dateApplicable;
+            this.countryL        = countryL;
+            this.targetCurrencyL = targetCurrencyL;
+        }
+
+        public String getDateApplicable()   { return dateApplicable; }
+        public Integer getCountryL()        { return countryL; }
+        public Integer getTargetCurrencyL() { return targetCurrencyL; }
+        public void setDateApplicable(String d)  { this.dateApplicable = d; }
+        public void setCountryL(Integer c)       { this.countryL = c; }
+        public void setTargetCurrencyL(Integer c){ this.targetCurrencyL = c; }
     }
 }
